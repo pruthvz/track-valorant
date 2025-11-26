@@ -16,54 +16,85 @@ export default function AgentsList() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center py-20">
-        <div className="text-gray-400 text-lg">Loading agents...</div>
+      <div className="min-h-screen bg-black relative flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-500 text-2xl font-black uppercase tracking-wider mb-4">Loading Agents...</div>
+          <div className="w-32 h-1 bg-black border border-red-500/50">
+            <div className="h-full bg-red-500 animate-pulse" style={{ width: '60%' }}></div>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="mb-6">
-        <h2 className="text-3xl font-bold text-white mb-2">Agents</h2>
-        <p className="text-gray-400">Select an agent to view details</p>
-      </div>
+    <div className="min-h-screen bg-black relative overflow-hidden">
+      {/* Animated Background */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black via-red-950/20 to-black"></div>
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,0,0,0.1),transparent_50%)]"></div>
       
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-        {agents.map((agent) => (
-          <div
-            key={agent.uuid}
-            className="group relative bg-gray-800 rounded-lg overflow-hidden border-2 border-gray-700 hover:border-red-500 transition-all duration-300 hover:shadow-lg hover:shadow-red-500/20 hover:-translate-y-1 cursor-pointer"
-          >
-            <div className="aspect-square flex items-center justify-center p-4 bg-gradient-to-b from-gray-800 to-gray-900">
-              <img
-                src={agent.displayIcon}
-                alt={agent.displayName}
-                className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-110"
-                onError={(e) => {
-                  e.target.style.display = 'none';
-                }}
-              />
-            </div>
-            <div className="p-3 bg-gray-800">
-              <h3 className="text-white font-semibold text-sm mb-1 truncate">
-                {agent.displayName}
-              </h3>
-              {agent.role && (
-                <div className="flex items-center gap-1.5">
-                  <img
-                    src={agent.role.displayIcon}
-                    alt={agent.role.displayName}
-                    className="w-4 h-4 object-contain"
-                  />
-                  <span className="text-xs text-gray-400 truncate">
-                    {agent.role.displayName}
-                  </span>
-                </div>
-              )}
-            </div>
+      {/* Grid Pattern Overlay */}
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
+      
+      {/* Content */}
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="mb-10">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-red-500/50 to-transparent"></div>
+            <h2 className="text-4xl sm:text-5xl font-black text-white uppercase tracking-wider">
+              AGENTS
+            </h2>
+            <div className="h-px flex-1 bg-gradient-to-l from-transparent via-red-500/50 to-transparent"></div>
           </div>
-        ))}
+          <p className="text-gray-400 text-center text-lg font-light tracking-wide">
+            Select an agent to view details
+          </p>
+        </div>
+        
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
+          {agents.map((agent) => (
+            <div
+              key={agent.uuid}
+              className="group relative bg-black/60 backdrop-blur-sm rounded-lg overflow-hidden border-2 border-red-500/20 hover:border-red-500 transition-all duration-300 hover:shadow-[0_0_30px_rgba(239,68,68,0.4)] hover:-translate-y-2 cursor-pointer"
+            >
+              <div className="aspect-square flex items-center justify-center p-4 bg-gradient-to-b from-black/80 to-black relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <img
+                  src={agent.displayIcon}
+                  alt={agent.displayName}
+                  className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-110 relative z-10 filter drop-shadow-[0_0_20px_rgba(0,0,0,0.8)]"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                  }}
+                />
+              </div>
+              <div className="p-3 bg-black/80 backdrop-blur-sm border-t border-red-500/20">
+                <h3 className="text-white font-bold text-sm mb-2 truncate uppercase tracking-wide">
+                  {agent.displayName}
+                </h3>
+                {agent.role && (
+                  <div className="flex items-center gap-2">
+                    <img
+                      src={agent.role.displayIcon}
+                      alt={agent.role.displayName}
+                      className="w-4 h-4 object-contain"
+                    />
+                    <span className="text-xs text-gray-400 uppercase tracking-wide truncate">
+                      {agent.role.displayName}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Animated Decorative Elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-10 w-96 h-96 bg-red-500/10 rounded-full blur-3xl animate-pulse-slow"></div>
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-red-500/10 rounded-full blur-3xl animate-pulse-slow" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-red-500/5 rounded-full blur-3xl"></div>
       </div>
     </div>
   );

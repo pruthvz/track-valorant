@@ -1,4 +1,44 @@
+import { useEffect, useRef } from 'react'
+import { playBackgroundMusic, stopBackgroundMusic } from '../utils/sounds'
+
 export default function LandingPage({ onOpenCrate, inventory = [], inventoryCount = 0, removeFromInventory }) {
+  const backgroundMusicStarted = useRef(false)
+
+  useEffect(() => {
+    // Start background music when component mounts
+    // Only start after user interaction (to avoid autoplay restrictions)
+    const startMusic = () => {
+      if (!backgroundMusicStarted.current) {
+        playBackgroundMusic()
+        backgroundMusicStarted.current = true
+      }
+    }
+
+    // Try to start music immediately (may fail due to autoplay restrictions)
+    const musicPromise = playBackgroundMusic()
+    
+    // If autoplay fails, start on first user interaction
+    if (musicPromise && musicPromise.catch) {
+      musicPromise.catch(() => {
+        // Autoplay was prevented, wait for user interaction
+        const handleInteraction = () => {
+          startMusic()
+          document.removeEventListener('click', handleInteraction)
+          document.removeEventListener('keydown', handleInteraction)
+        }
+        document.addEventListener('click', handleInteraction, { once: true })
+        document.addEventListener('keydown', handleInteraction, { once: true })
+      })
+    } else {
+      backgroundMusicStarted.current = true
+    }
+
+    // Cleanup: stop music when component unmounts
+    return () => {
+      stopBackgroundMusic()
+      backgroundMusicStarted.current = false
+    }
+  }, [])
 
   return (
     <div className="min-h-screen bg-black relative overflow-hidden">
@@ -109,8 +149,12 @@ export default function LandingPage({ onOpenCrate, inventory = [], inventoryCoun
                   )}
                 </div>
                 <button
-                  onClick={() => removeFromInventory(item.uuid)}
-                  className="absolute top-2 right-2 w-7 h-7 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center text-sm font-bold opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 shadow-lg"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    removeFromInventory(item.uuid);
+                  }}
+                  className="absolute top-2 right-2 w-7 h-7 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center text-sm font-bold opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 shadow-lg z-20"
                   title="Remove from inventory"
                 >
                   ×

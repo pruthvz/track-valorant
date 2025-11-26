@@ -1,3 +1,5 @@
+import valoLogo from '../assets/valo.png'
+
 function Navbar({ activeTab, onTabChange }) {
   return (
     <nav className="bg-black/90 backdrop-blur-sm border-b border-red-500/20 sticky top-0 z-50">
@@ -6,31 +8,12 @@ function Navbar({ activeTab, onTabChange }) {
           <div className="flex items-center space-x-3">
             {/* Valorant Logo */}
             <div className="flex items-center">
-              <svg 
-                width="32" 
-                height="32" 
-                viewBox="0 0 32 32" 
-                fill="none" 
-                xmlns="http://www.w3.org/2000/svg"
-                className="text-red-500"
-              >
-                <path 
-                  d="M16 2L2 8L16 14L30 8L16 2Z" 
-                  fill="currentColor"
-                  className="text-red-500"
-                />
-                <path 
-                  d="M2 8L16 14V30L2 24V8Z" 
-                  fill="currentColor"
-                  className="text-red-500"
-                />
-                <path 
-                  d="M30 8L16 14V30L30 24V8Z" 
-                  fill="currentColor"
-                  className="text-red-500"
-                />
-              </svg>
-              <span className="ml-2 text-xl font-bold bg-gradient-to-r from-red-500 to-red-400 bg-clip-text text-transparent">
+              <img 
+                src={valoLogo} 
+                alt="Valorant Logo" 
+                className="h-8 w-auto"
+              />
+              <span className="ml-3 text-xl font-bold bg-gradient-to-r from-red-500 to-red-400 bg-clip-text text-transparent">
                 VALORANT
               </span>
             </div>
@@ -60,16 +43,7 @@ function Navbar({ activeTab, onTabChange }) {
             >
               Agents
             </button>
-            <button
-              onClick={() => onTabChange('weapons')}
-              className={`px-4 py-2 rounded text-sm font-semibold uppercase tracking-wider transition-all ${
-                activeTab === 'weapons'
-                  ? 'text-white bg-red-500/20 border border-red-500/50'
-                  : 'text-gray-400 hover:text-white hover:bg-gray-800/50'
-              }`}
-            >
-              Weapons
-            </button>
+       
             <button
               onClick={() => onTabChange('skins')}
               className={`px-4 py-2 rounded text-sm font-semibold uppercase tracking-wider transition-all ${
