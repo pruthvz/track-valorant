@@ -25,7 +25,6 @@ function App() {
           />
         )}
         {activeTab === 'agents' && <AgentsList />}
-        {activeTab === 'weapons' && <WeaponsList />}
         {activeTab === 'skins' && <WeaponSkinsList />}
         {activeTab === 'inventory' && <Inventory />}
         {activeTab === 'maps' && (
