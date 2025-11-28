@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
-import { fetchWeaponSkins } from "../api/valorant";
+import { fetchWeaponSkins, fetchContentTiers, fetchThemes } from "../api/valorant";
 
 // Known weapon types in Valorant
 const WEAPON_TYPES = [
@@ -46,21 +46,88 @@ const extractWeaponType = (skinName) => {
   return 'Unknown';
 };
 
+// Extract weapon name from skin name (removes skin name prefix)
+const extractWeaponName = (skinName) => {
+  if (!skinName) return 'Unknown';
+  
+  const name = skinName.toLowerCase();
+  
+  // Check for melee/knife first
+  if (name.includes('knife') || name.includes('melee') || name.includes('tactical knife')) {
+    return 'Melee';
+  }
+  
+  // Check each weapon type
+  for (const weapon of WEAPON_TYPES.slice(1)) { // Skip 'All'
+    if (name.includes(weapon.toLowerCase())) {
+      return weapon;
+    }
+  }
+  
+  return 'Unknown';
+};
+
+// Price mapping based on content tier
+const getPriceFromTier = (contentTierUuid, contentTiers) => {
+  if (!contentTierUuid || !contentTiers) return 0;
+  
+  const tier = contentTiers.find(t => t.uuid === contentTierUuid);
+  if (!tier) return 0;
+  
+  // Standard Valorant pricing tiers
+  const tierPrices = {
+    '12683d76-48d7-84a3-4e09-6985794f4595': 875,  // Deluxe
+    '0cebb8be-46d7-c12a-d306-e19f4b5a9ac4': 1275, // Premium
+    '60bca009-4182-7998-dee9-b8d5efbe2df8': 1775, // Exclusive
+    'e046854e-406c-37f4-6607-19ac9be24af2': 2475, // Ultra
+    '411e4a55-4e59-7757-41ec-e5c4c219b430': 2475, // Exotic
+  };
+  
+  return tierPrices[contentTierUuid] || 0;
+};
+
 export default function WeaponSkinsList() {
   const [skins, setSkins] = useState([]);
+  const [contentTiers, setContentTiers] = useState([]);
+  const [themes, setThemes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedWeaponType, setSelectedWeaponType] = useState('All');
+  const [sortBy, setSortBy] = useState('name'); // name, class, weapon, bundle, cost
+  const [sortOrder, setSortOrder] = useState('asc'); // asc, desc
 
   useEffect(() => {
     async function fetchData() {
-      const data = await fetchWeaponSkins();
-      // Add weapon type to each skin
-      const skinsWithType = data.map(skin => ({
-        ...skin,
-        weaponType: extractWeaponType(skin.displayName)
-      }));
-      setSkins(skinsWithType);
+      const [skinsData, tiersData, themesData] = await Promise.all([
+        fetchWeaponSkins(),
+        fetchContentTiers(),
+        fetchThemes()
+      ]);
+      
+      // Create lookup maps
+      const tierMap = new Map(tiersData.map(tier => [tier.uuid, tier]));
+      const themeMap = new Map(themesData.map(theme => [theme.uuid, theme]));
+      
+      // Add weapon type, weapon name, bundle name, and price to each skin
+      const skinsWithData = skinsData.map(skin => {
+        const weaponType = extractWeaponType(skin.displayName);
+        const weaponName = extractWeaponName(skin.displayName);
+        const theme = skin.themeUuid ? themeMap.get(skin.themeUuid) : null;
+        const bundleName = theme ? theme.displayName : (skin.themeUuid ? 'Unknown Bundle' : 'Standard');
+        const price = getPriceFromTier(skin.contentTierUuid, tiersData);
+        
+        return {
+          ...skin,
+          weaponType,
+          weaponName,
+          bundleName,
+          price
+        };
+      });
+      
+      setSkins(skinsWithData);
+      setContentTiers(tiersData);
+      setThemes(themesData);
       setLoading(false);
     }
     fetchData();
@@ -80,20 +147,44 @@ export default function WeaponSkinsList() {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(skin =>
         skin.displayName.toLowerCase().includes(query) ||
-        skin.weaponType.toLowerCase().includes(query)
+        skin.weaponType.toLowerCase().includes(query) ||
+        skin.weaponName.toLowerCase().includes(query) ||
+        skin.bundleName.toLowerCase().includes(query)
       );
     }
 
-    // Sort by weapon type, then by name
+    // Sort based on selected option
     filtered.sort((a, b) => {
-      if (a.weaponType !== b.weaponType) {
-        return a.weaponType.localeCompare(b.weaponType);
+      let comparison = 0;
+      
+      switch (sortBy) {
+        case 'class':
+          comparison = a.weaponType.localeCompare(b.weaponType);
+          if (comparison === 0) comparison = a.displayName.localeCompare(b.displayName);
+          break;
+        case 'weapon':
+          comparison = a.weaponName.localeCompare(b.weaponName);
+          if (comparison === 0) comparison = a.displayName.localeCompare(b.displayName);
+          break;
+        case 'bundle':
+          comparison = a.bundleName.localeCompare(b.bundleName);
+          if (comparison === 0) comparison = a.displayName.localeCompare(b.displayName);
+          break;
+        case 'cost':
+          comparison = (b.price || 0) - (a.price || 0); // Descending by default (highest first)
+          if (comparison === 0) comparison = a.displayName.localeCompare(b.displayName);
+          break;
+        case 'name':
+        default:
+          comparison = a.displayName.localeCompare(b.displayName);
+          break;
       }
-      return a.displayName.localeCompare(b.displayName);
+      
+      return sortOrder === 'asc' ? comparison : -comparison;
     });
 
     return filtered;
-  }, [skins, searchQuery, selectedWeaponType]);
+  }, [skins, searchQuery, selectedWeaponType, sortBy, sortOrder]);
 
   // Get unique weapon types from actual skins
   const availableWeaponTypes = useMemo(() => {
@@ -140,41 +231,76 @@ export default function WeaponSkinsList() {
         </div>
 
         {/* Search and Filter Controls */}
-        <div className="mb-8 flex flex-col sm:flex-row gap-4">
-          {/* Search Input */}
-          <div className="flex-1">
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Search skins..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-4 py-3 bg-black/60 border-2 border-red-500/30 text-white placeholder-gray-500 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/50 transition-all duration-300 font-semibold uppercase tracking-wide"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-red-500 transition-colors text-xl font-bold"
-                >
-                  ×
-                </button>
-              )}
+        <div className="mb-8 space-y-4">
+          {/* Top Row: Search and Weapon Filter */}
+          <div className="flex flex-col sm:flex-row gap-4">
+            {/* Search Input */}
+            <div className="flex-1">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search skins..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full px-4 py-3 bg-black/60 border-2 border-red-500/30 text-white placeholder-gray-500 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/50 transition-all duration-300 font-semibold uppercase tracking-wide"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-red-500 transition-colors text-xl font-bold"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Weapon Type Filter */}
+            <div className="sm:w-64">
+              <select
+                value={selectedWeaponType}
+                onChange={(e) => setSelectedWeaponType(e.target.value)}
+                className="w-full px-4 py-3 bg-black/60 border-2 border-red-500/30 text-white focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/50 transition-all duration-300 font-semibold uppercase tracking-wide cursor-pointer"
+              >
+                {availableWeaponTypes.map((type) => (
+                  <option key={type} value={type} className="bg-black">
+                    {type === 'All' ? 'All Weapons' : type}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
-          {/* Weapon Type Filter */}
-          <div className="sm:w-64">
-            <select
-              value={selectedWeaponType}
-              onChange={(e) => setSelectedWeaponType(e.target.value)}
-              className="w-full px-4 py-3 bg-black/60 border-2 border-red-500/30 text-white focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/50 transition-all duration-300 font-semibold uppercase tracking-wide cursor-pointer"
-            >
-              {availableWeaponTypes.map((type) => (
-                <option key={type} value={type} className="bg-black">
-                  {type === 'All' ? 'All Weapons' : type}
-                </option>
-              ))}
-            </select>
+          {/* Bottom Row: Sort Options */}
+          <div className="flex flex-col sm:flex-row gap-4">
+            {/* Sort By */}
+            <div className="sm:w-48">
+              <label className="block text-xs text-gray-400 uppercase tracking-wide mb-1">Sort By</label>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="w-full px-4 py-3 bg-black/60 border-2 border-red-500/30 text-white focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/50 transition-all duration-300 font-semibold uppercase tracking-wide cursor-pointer"
+              >
+                <option value="name" className="bg-black">Name</option>
+                <option value="class" className="bg-black">Class (Weapon Type)</option>
+                <option value="weapon" className="bg-black">Weapon</option>
+                <option value="bundle" className="bg-black">Bundle</option>
+                <option value="cost" className="bg-black">Cost</option>
+              </select>
+            </div>
+
+            {/* Sort Order */}
+            <div className="sm:w-40">
+              <label className="block text-xs text-gray-400 uppercase tracking-wide mb-1">Order</label>
+              <select
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value)}
+                className="w-full px-4 py-3 bg-black/60 border-2 border-red-500/30 text-white focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/50 transition-all duration-300 font-semibold uppercase tracking-wide cursor-pointer"
+              >
+                <option value="asc" className="bg-black">Ascending</option>
+                <option value="desc" className="bg-black">Descending</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -214,14 +340,21 @@ export default function WeaponSkinsList() {
                   <h3 className="text-white font-bold text-sm mb-1 truncate uppercase tracking-wide">
                     {skin.displayName}
                   </h3>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-red-400 uppercase tracking-wide font-semibold">
-                      {skin.weaponType}
-                    </span>
-                    {skin.contentTierUuid && (
-                      <span className="text-xs text-gray-400 uppercase tracking-wide">
-                        {skin.themeUuid ? 'Themed' : 'Standard'}
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-red-400 uppercase tracking-wide font-semibold">
+                        {skin.weaponType}
                       </span>
+                      {skin.price > 0 && (
+                        <span className="text-xs text-yellow-400 uppercase tracking-wide font-bold">
+                          {skin.price} VP
+                        </span>
+                      )}
+                    </div>
+                    {skin.bundleName && skin.bundleName !== 'Standard' && (
+                      <div className="text-[10px] text-gray-500 uppercase tracking-wide truncate">
+                        {skin.bundleName}
+                      </div>
                     )}
                   </div>
                 </div>

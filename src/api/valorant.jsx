@@ -48,3 +48,33 @@ export const fetchWeaponSkins = async () => {
     }
 }
 
+export const fetchContentTiers = async () => {
+    try {
+        const res = await axios.get(`${API_URL}/contenttiers`, {
+            params: {
+                language: 'en-US'
+            }
+        })
+        return res.data.data
+    }
+    catch (error) {
+        console.error('Error fetching content tiers:', error)
+        return []
+    }
+}
+
+export const fetchThemes = async () => {
+    try {
+        const res = await axios.get(`${API_URL}/themes`, {
+            params: {
+                language: 'en-US'
+            }
+        })
+        return res.data.data
+    }
+    catch (error) {
+        console.error('Error fetching themes:', error)
+        return []
+    }
+}
+
