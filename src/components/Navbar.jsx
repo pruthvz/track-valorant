@@ -65,6 +65,16 @@ function Navbar({ activeTab, onTabChange }) {
               Inventory
             </button>
             <button
+              onClick={() => onTabChange('vp-calculator')}
+              className={`px-4 py-2 rounded text-sm font-semibold uppercase tracking-wider transition-all ${
+                activeTab === 'vp-calculator'
+                  ? 'text-white bg-red-500/20 border border-red-500/50'
+                  : 'text-gray-400 hover:text-white hover:bg-gray-800/50'
+              }`}
+            >
+              VP Calculator
+            </button>
+            <button
               onClick={() => onTabChange('maps')}
               className={`px-4 py-2 rounded text-sm font-semibold uppercase tracking-wider transition-all ${
                 activeTab === 'maps'

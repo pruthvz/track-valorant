@@ -78,3 +78,50 @@ export const fetchThemes = async () => {
     }
 }
 
+
+
+export const fetchBundles = async () => {
+    try {
+        const res = await axios.get(`${API_URL}/bundles`, {
+            params: {
+                language: 'en-US'
+            }
+        })
+        return res.data.data
+    }
+    catch (error) {
+        console.error('Error fetching bundles:', error)
+        return []
+    }
+}
+
+export const fetchBundleByUuid = async (bundleUuid) => {
+    try {
+        const res = await axios.get(`${API_URL}/bundles/${bundleUuid}`, {
+            params: {
+                language: 'en-US'
+            }
+        })
+        return res.data.data
+    }
+    catch (error) {
+        console.error('Error fetching bundle:', error)
+        return null
+    }
+}
+
+export const fetchCompetitiveTiers = async () => {
+    try {
+        const res = await axios.get(`${API_URL}/competitivetiers`, {
+            params: {
+                language: 'en-US'
+            }
+        })
+        return res.data.data
+    }
+    catch (error) {
+        console.error('Error fetching competitive tiers:', error)
+        return []
+    }
+}
+

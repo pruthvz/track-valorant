@@ -5,6 +5,7 @@ import Inventory from './components/Inventory'
 import CrateModal from './components/CrateModal'
 import LandingPage from './components/LandingPage'
 import Navbar from './components/Navbar'
+import VPCalculator from './components/VPCalculator'
 import { useInventory } from './hooks/useInventory'
 
 function App() {
@@ -27,6 +28,7 @@ function App() {
         {activeTab === 'agents' && <AgentsList />}
         {activeTab === 'skins' && <WeaponSkinsList />}
         {activeTab === 'inventory' && <Inventory />}
+        {activeTab === 'vp-calculator' && <VPCalculator />}
         {activeTab === 'maps' && (
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="text-center text-gray-400">
